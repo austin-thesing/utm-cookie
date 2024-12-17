@@ -54,18 +54,37 @@ function handleWebflowForm() {
     const forms = document.querySelectorAll('form[action*="vonigo.com"]');
 
     forms.forEach((form) => {
-      // Add hidden fields for each UTM parameter
-      Object.entries(utmData).forEach(([key, value]) => {
-        if (value) {
-          // Check if field already exists
-          let hiddenField = form.querySelector(`input[name="${key}"]`);
-          if (!hiddenField) {
-            hiddenField = document.createElement("input");
-            hiddenField.type = "hidden";
-            hiddenField.name = key;
-            form.appendChild(hiddenField);
+      form.addEventListener("submit", async function (e) {
+        e.preventDefault();
+
+        // Create FormData from the form
+        const formData = new FormData(form);
+
+        // Add UTM data to formData
+        Object.entries(utmData).forEach(([key, value]) => {
+          if (value) {
+            formData.append(key, value);
           }
-          hiddenField.value = value;
+        });
+
+        try {
+          const response = await fetch("https://thehappycarclub.vonigo.com/external/data/", {
+            method: "POST",
+            body: formData,
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          // Handle successful submission
+          const result = await response.json();
+          console.log("Success:", result);
+
+          // You might want to redirect or show success message here
+        } catch (error) {
+          console.error("Error:", error);
+          // Handle error - maybe show error message to user
         }
       });
     });
@@ -79,22 +98,3 @@ window.onload = function () {
 
 // Initialize form handling when DOM is loaded
 document.addEventListener("DOMContentLoaded", handleWebflowForm);
-
-form.addEventListener("submit", async function (e) {
-  e.preventDefault();
-  const formData = new FormData(form);
-  // Add UTM data to formData
-  Object.entries(utmData).forEach(([key, value]) => {
-    if (value) formData.append(key, value);
-  });
-
-  try {
-    const response = await fetch("https://thehappycarclub.vonigo.com/external/data/", {
-      method: "POST",
-      body: formData,
-    });
-    // Handle response
-  } catch (error) {
-    console.error("Error:", error);
-  }
-});
