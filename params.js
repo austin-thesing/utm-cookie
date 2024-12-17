@@ -12,15 +12,15 @@ function getCookie(name) {
 
 // Function to get UTM parameters from the URL
 function getUTMParameters() {
-  var utms = {};
-  var utm_keys = ["utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content"];
+  var params = {};
+  var tracking_keys = ["gclid", "fbclid", "utm_source_platform", "utm_id", "utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content"];
   var url = window.location.href;
   url.replace(/[?&]+([^=&]+)=([^&]*)/gi, function (m, key, value) {
-    if (utm_keys.includes(key)) {
-      utms[key] = value;
+    if (tracking_keys.includes(key)) {
+      params[key] = value;
     }
   });
-  return utms;
+  return params;
 }
 
 // Function to set cookie
@@ -44,28 +44,46 @@ function updateOrPersistUTMCookie(cookieName) {
   }
 }
 
-// On page load, handle UTM cookie persistence or update
+// Function to add UTM data to form action URL
+function addUTMDataToForm() {
+  // Get the booking lead form
+  const form = document.getElementById("Booking-Lead-Form");
+  if (!form) return;
+
+  // Add submit event listener
+  form.addEventListener("submit", function (e) {
+    // Get UTM data from cookie
+    const utmData = getCookie("PPC Attribution Tracker");
+    if (!utmData) return;
+
+    // Get current action URL
+    let actionUrl = form.action;
+
+    // Create URL object to handle parameters properly
+    const url = new URL(actionUrl);
+
+    // Add each UTM parameter to the URL
+    Object.entries(utmData).forEach(([key, value]) => {
+      if (value) {
+        // Only add if value exists
+        url.searchParams.set(key, value);
+      }
+    });
+
+    // Update form action with new URL
+    form.action = url.toString();
+  });
+}
+
+// On page load, handle UTM cookie persistence or update and initialize form handling
 window.onload = function () {
   updateOrPersistUTMCookie("PPC Attribution Tracker");
-  // Function to delete a cookie
+
+  // Function to delete a cookie (kept for potential future use)
   function deleteCookie(name) {
-    document.cookie = name + "=; path=/; domain=.thehappycarclub; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
-  }
-
-  // Handle 'gsxid' and 'gspk' parameters independently of UTMs
-  var params = new URLSearchParams(window.location.search);
-  var hasGSPK = params.has("gspk");
-  var hasGSXID = params.has("gsxid");
-
-  if (hasGSPK) {
-    setCookie("gspk", params.get("gspk")); // Set as a session cookie
-  } else {
-    deleteCookie("gspk");
-  }
-
-  if (hasGSXID) {
-    setCookie("gsxid", params.get("gsxid")); // Set as a session cookie
-  } else {
-    deleteCookie("gsxid");
+    document.cookie = name + "=; path=/; domain=.thehappycarclub.com; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
   }
 };
+
+// Initialize form handling when DOM is loaded
+document.addEventListener("DOMContentLoaded", addUTMDataToForm);
