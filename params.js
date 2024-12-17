@@ -79,3 +79,22 @@ window.onload = function () {
 
 // Initialize form handling when DOM is loaded
 document.addEventListener("DOMContentLoaded", handleWebflowForm);
+
+form.addEventListener("submit", async function (e) {
+  e.preventDefault();
+  const formData = new FormData(form);
+  // Add UTM data to formData
+  Object.entries(utmData).forEach(([key, value]) => {
+    if (value) formData.append(key, value);
+  });
+
+  try {
+    const response = await fetch("https://thehappycarclub.vonigo.com/external/data/", {
+      method: "POST",
+      body: formData,
+    });
+    // Handle response
+  } catch (error) {
+    console.error("Error:", error);
+  }
+});
