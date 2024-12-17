@@ -44,46 +44,49 @@ function updateOrPersistUTMCookie(cookieName) {
   }
 }
 
-// Function to add UTM data to form action URL
-function addUTMDataToForm() {
-  // Get the booking lead form
-  const form = document.getElementById("Booking-Lead-Form");
-  if (!form) return;
-
-  // Add submit event listener
-  form.addEventListener("submit", function (e) {
+// Function to handle Webflow form submission
+function handleWebflowForm() {
+  // Wait for Webflow to be ready
+  window.Webflow = window.Webflow || [];
+  window.Webflow.push(function () {
     // Get UTM data from cookie
     const utmData = getCookie("PPC Attribution Tracker");
     if (!utmData) return;
 
-    // Get current action URL
-    let actionUrl = form.action;
+    // Find all forms on the page
+    const forms = document.querySelectorAll('form[action*="vonigo.com"]');
 
-    // Create URL object to handle parameters properly
-    const url = new URL(actionUrl);
+    forms.forEach((form) => {
+      // Store the original action URL
+      const originalAction = form.getAttribute("action");
 
-    // Add each UTM parameter to the URL
-    Object.entries(utmData).forEach(([key, value]) => {
-      if (value) {
-        // Only add if value exists
-        url.searchParams.set(key, value);
-      }
+      form.addEventListener("submit", function (e) {
+        e.preventDefault();
+
+        // Create URL object from the original action
+        const url = new URL(originalAction);
+
+        // Add UTM parameters to the URL
+        Object.entries(utmData).forEach(([key, value]) => {
+          if (value) {
+            url.searchParams.set(key, value);
+          }
+        });
+
+        // Update form action with new URL
+        form.setAttribute("action", url.toString());
+
+        // Submit the form
+        form.submit();
+      });
     });
-
-    // Update form action with new URL
-    form.action = url.toString();
   });
 }
 
-// On page load, handle UTM cookie persistence or update and initialize form handling
+// On page load, handle UTM cookie persistence
 window.onload = function () {
   updateOrPersistUTMCookie("PPC Attribution Tracker");
-
-  // Function to delete a cookie (kept for potential future use)
-  function deleteCookie(name) {
-    document.cookie = name + "=; path=/; domain=.thehappycarclub.com; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
-  }
 };
 
 // Initialize form handling when DOM is loaded
-document.addEventListener("DOMContentLoaded", addUTMDataToForm);
+document.addEventListener("DOMContentLoaded", handleWebflowForm);
