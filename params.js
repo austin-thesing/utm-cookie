@@ -46,38 +46,27 @@ function updateOrPersistUTMCookie(cookieName) {
 
 // Function to handle Webflow form submission
 function handleWebflowForm() {
-  // Wait for Webflow to be ready
   window.Webflow = window.Webflow || [];
   window.Webflow.push(function () {
-    // Get UTM data from cookie
     const utmData = getCookie("PPC Attribution Tracker");
     if (!utmData) return;
 
-    // Find all forms on the page
     const forms = document.querySelectorAll('form[action*="vonigo.com"]');
 
     forms.forEach((form) => {
-      // Store the original action URL
-      const originalAction = form.getAttribute("action");
-
-      form.addEventListener("submit", function (e) {
-        e.preventDefault();
-
-        // Create URL object from the original action
-        const url = new URL(originalAction);
-
-        // Add UTM parameters to the URL
-        Object.entries(utmData).forEach(([key, value]) => {
-          if (value) {
-            url.searchParams.set(key, value);
+      // Add hidden fields for each UTM parameter
+      Object.entries(utmData).forEach(([key, value]) => {
+        if (value) {
+          // Check if field already exists
+          let hiddenField = form.querySelector(`input[name="${key}"]`);
+          if (!hiddenField) {
+            hiddenField = document.createElement("input");
+            hiddenField.type = "hidden";
+            hiddenField.name = key;
+            form.appendChild(hiddenField);
           }
-        });
-
-        // Update form action with new URL
-        form.setAttribute("action", url.toString());
-
-        // Submit the form
-        form.submit();
+          hiddenField.value = value;
+        }
       });
     });
   });
